@@ -1,0 +1,37 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: ms-campuslab-bff
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          # Permite usar la variable IDAAS_ISSUER_URI o AZURE_TENANT_ID, manteniendo Azure por defecto
+          # URL del Tenant de Azure AD / Entra ID
+          issuer-uri: ${IDAAS_ISSUER_URI:https://login.microsoftonline.com/${AZURE_TENANT_ID:common}/v2.0}
+          # Client ID o URI del Scope registrado para la API en Azure
+          audiences: ${IDAAS_AUDIENCE:api://${AZURE_CLIENT_ID:campuslab-api-id}}
+  kafka:
+    bootstrap-servers: ${SPRING_KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+    consumer:
+      group-id: bff-analytics-group
+      auto-offset-reset: earliest
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
+      properties:
+        spring.json.trusted.packages: "*"
+        spring.json.value.default.type: com.campuslab.bff.dto.AnalyticsMetricDTO
+        spring.json.use.type.headers: false
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+      properties:
+        spring.json.add.type.headers: false
+
+# Rutas de los microservicios de dominio (para delegar/proxyear peticiones)
+services:
+  bookings-url: ${BOOKINGS_SVC_URL:http://localhost:8081}
+  catalog-url: ${CATALOG_SVC_URL:http://localhost:8082}
+  reports-url: ${REPORTS_SVC_URL:http://localhost:8083}

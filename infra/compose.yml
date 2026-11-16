@@ -1,0 +1,133 @@
+version: '3.8'
+
+services:
+  ms-campuslab-bff:
+    build:
+      context: ../ms-campuslab-bff
+      dockerfile: Dockerfile
+    container_name: ms-campuslab-bff
+    ports:
+      - "8080:8080"
+    environment:
+      - BOOKINGS_SVC_URL=http://ms-campuslab-bookings:8081
+      - CATALOG_SVC_URL=http://ms-campuslab-catalog:8082
+      - REPORTS_SVC_URL=http://ms-campuslab-reports:8083
+      - SPRING_RABBITMQ_HOST=rabbitmq
+      - SPRING_KAFKA_BOOTSTRAP_SERVERS=kafka:29092
+    depends_on:
+      - ms-campuslab-bookings
+      - ms-campuslab-catalog
+      - ms-campuslab-reports
+      - rabbitmq
+      - kafka
+    networks:
+      - campuslab-network
+
+  ms-campuslab-bookings:
+    build:
+      context: ../ms-campuslab-bookings
+      dockerfile: Dockerfile
+    container_name: ms-campuslab-bookings
+    ports:
+      - "8081:8081"
+    environment:
+      - SPRING_RABBITMQ_HOST=rabbitmq
+      - SPRING_KAFKA_BOOTSTRAP_SERVERS=kafka:29092
+    depends_on:
+      - rabbitmq
+      - kafka
+    networks:
+      - campuslab-network
+
+  ms-campuslab-catalog:
+    build:
+      context: ../ms-campuslab-catalog
+      dockerfile: Dockerfile
+    container_name: ms-campuslab-catalog
+    ports:
+      - "8082:8082"
+    environment:
+      - SPRING_RABBITMQ_HOST=rabbitmq
+      - SPRING_KAFKA_BOOTSTRAP_SERVERS=kafka:29092
+    depends_on:
+      - rabbitmq
+      - kafka
+    networks:
+      - campuslab-network
+
+  ms-campuslab-reports:
+    build:
+      context: ../ms-campuslab-reports
+      dockerfile: Dockerfile
+    container_name: ms-campuslab-reports
+    ports:
+      - "8083:8083"
+    environment:
+      - SPRING_RABBITMQ_HOST=rabbitmq
+      - SPRING_KAFKA_BOOTSTRAP_SERVERS=kafka:29092
+    depends_on:
+      - rabbitmq
+      - kafka
+    networks:
+      - campuslab-network
+
+  rabbitmq:
+    image: rabbitmq:3-management-alpine
+    container_name: campuslab-rabbitmq
+    ports:
+      - "5672:5672"     # Puerto AMQP
+      - "15672:15672"   # Panel de Control Web de RabbitMQ
+    environment:
+      - RABBITMQ_DEFAULT_USER=guest
+      - RABBITMQ_DEFAULT_PASS=guest
+    networks:
+      - campuslab-network
+
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.6.0
+    container_name: campuslab-zookeeper
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+    ports:
+      - "2181:2181"
+    networks:
+      - campuslab-network
+
+  kafka:
+    image: confluentinc/cp-kafka:7.6.0
+    container_name: campuslab-kafka
+    depends_on:
+      - zookeeper
+    ports:
+      - "9092:9092"
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: INTERNAL:PLAINTEXT,EXTERNAL:PLAINTEXT
+      KAFKA_ADVERTISED_LISTENERS: INTERNAL://kafka:29092,EXTERNAL://localhost:9092
+      KAFKA_INTER_BROKER_LISTENER_NAME: INTERNAL
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "false"
+    networks:
+      - campuslab-network
+
+  kafka-ui:
+    image: provectuslabs/kafka-ui:latest
+    container_name: campuslab-kafka-ui
+    depends_on:
+      - kafka
+    ports:
+      - "8090:8080"
+    environment:
+      KAFKA_CLUSTERS_0_NAME: campuslab-cluster
+      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:29092
+      KAFKA_CLUSTERS_0_ZOOKEEPER: zookeeper:2181
+    networks:
+      - campuslab-network
+
+networks:
+  campuslab-network:
+    driver: bridge
