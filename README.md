@@ -28,8 +28,7 @@ CampusLab implementa una arquitectura híbrida que combina RabbitMQ para colas t
 ### Topología de Tópicos Kafka
 | Tópico | Particiones | Productor(es) | Consumidores (Consumer Groups) | Propósito |
 | :----: | :---------: | :-----------: | :----------------: | :-------: |
-| ```campuslab.bookings.stream``` | 3 | ```ms-campuslab-bookings``` | ```reports-analytics-group```(```ms-campuslab-reports```)
-```catalog-availability-group``` (```ms-campuslab-catalog```) | Distribución en paralelo de eventos de reservas (```BOOKING_CREATED```, ```BOOKING_UPDATED```) para analítica y sincronización de disponibilidad. |
+| ```campuslab.bookings.stream``` | 3 | ```ms-campuslab-bookings``` | ```reports-analytics-group```(```ms-campuslab-reports```), ```catalog-availability-group``` (```ms-campuslab-catalog```) | Distribución en paralelo de eventos de reservas (```BOOKING_CREATED```, ```BOOKING_UPDATED```) para analítica y sincronización de disponibilidad. |
 | ```campuslab.analytics.metrics``` | 3 | ```ms-campuslab-bookings``` | ```bff-analytics-group```(```ms-campuslab-bff```) | Publicación de métricas agregadas calculadas en tiempo real para exposición al frontend. |
 
 ### Resiliencia y Gobernanza
